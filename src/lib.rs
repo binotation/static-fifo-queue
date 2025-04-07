@@ -1,18 +1,18 @@
+//! This is a statically allocated FIFO Queue for copy types. Holds N-1 elements.
 #![no_std]
-#![feature(maybe_uninit_uninit_array)]
 use core::mem::MaybeUninit;
 
-pub struct Queue<T, const N: usize> {
+pub struct Queue<T: Copy, const N: usize> {
     buffer: [MaybeUninit<T>; N],
     head: usize,
     tail: usize,
 }
 
-impl<T, const N: usize> Queue<T, N> {
+impl<T: Copy, const N: usize> Queue<T, N> {
     #[inline]
     pub const fn new() -> Self {
         Self {
-            buffer: MaybeUninit::uninit_array(),
+            buffer: [const { MaybeUninit::uninit() }; N],
             head: 0,
             tail: 0,
         }
@@ -31,7 +31,7 @@ impl<T, const N: usize> Queue<T, N> {
         }
         let head = self.head;
         self.head = (self.head + 1) % N;
-        Some(unsafe { self.buffer[head].assume_init_read() })
+        Some(unsafe { self.buffer[head].assume_init() })
     }
 
     #[inline]
@@ -40,7 +40,7 @@ impl<T, const N: usize> Queue<T, N> {
     }
 }
 
-impl<T, const N: usize> Default for Queue<T, N> {
+impl<T: Copy, const N: usize> Default for Queue<T, N> {
     fn default() -> Self {
         Self::new()
     }
@@ -51,7 +51,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn it_works() {
+    fn test_it_works() {
         let mut queue: Queue<u32, 4> = Queue::new();
         assert!(queue.is_empty());
         assert_eq!(queue.dequeue(), None);
@@ -97,5 +97,16 @@ mod tests {
         assert_eq!(queue.dequeue(), Some(64004));
         assert_eq!(queue.dequeue(), Some(63460));
         assert_eq!(queue.dequeue(), None);
+    }
+
+    #[test]
+    fn test_fails_when_queueing_n() {
+        let mut queue: Queue<u32, 4> = Queue::new();
+
+        queue.enqueue(26769);
+        queue.enqueue(64004);
+        queue.enqueue(63460);
+        queue.enqueue(857);
+        assert!(queue.is_empty());
     }
 }

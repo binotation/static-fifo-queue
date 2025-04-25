@@ -1,5 +1,8 @@
-//! This is a statically allocated FIFO Queue for copy types. Holds N-1 elements.
+//! This is a statically allocated FIFO Queue for copy types. Holds `N`-1 elements.
+//! `N` must be a power of 2, i.e. 8, 16, 32, 64.
 #![no_std]
+#![allow(incomplete_features)]
+#![feature(generic_const_exprs)]
 use core::mem::MaybeUninit;
 
 pub struct Queue<T: Copy, const N: usize> {
@@ -21,7 +24,7 @@ impl<T: Copy, const N: usize> Queue<T, N> {
     #[inline]
     pub fn enqueue(&mut self, item: T) {
         self.buffer[self.tail].write(item);
-        self.tail = (self.tail + 1) % N;
+        self.tail = (self.tail + 1) & (N - 1);
     }
 
     #[inline]
@@ -30,7 +33,7 @@ impl<T: Copy, const N: usize> Queue<T, N> {
             return None;
         }
         let head = self.head;
-        self.head = (self.head + 1) % N;
+        self.head = (self.head + 1) & (N - 1);
         Some(unsafe { self.buffer[head].assume_init() })
     }
 

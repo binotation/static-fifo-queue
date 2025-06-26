@@ -12,7 +12,7 @@ pub struct Queue<T: Copy, const N: usize> {
 }
 
 impl<T: Copy, const N: usize> Queue<T, N> {
-    #[inline]
+    #[inline(always)]
     pub const fn new() -> Self {
         Self {
             buffer: [const { MaybeUninit::uninit() }; N],
@@ -21,13 +21,13 @@ impl<T: Copy, const N: usize> Queue<T, N> {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn enqueue(&mut self, item: T) {
         self.buffer[self.tail].write(item);
         self.tail = (self.tail + 1) & (N - 1);
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn dequeue(&mut self) -> Option<T> {
         if self.is_empty() {
             return None;
@@ -37,13 +37,14 @@ impl<T: Copy, const N: usize> Queue<T, N> {
         Some(unsafe { self.buffer[head].assume_init() })
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn is_empty(&self) -> bool {
         self.head == self.tail
     }
 }
 
 impl<T: Copy, const N: usize> Default for Queue<T, N> {
+    #[inline(always)]
     fn default() -> Self {
         Self::new()
     }
